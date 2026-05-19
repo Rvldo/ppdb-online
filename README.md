@@ -268,8 +268,8 @@ Jika project ini bermanfaat, kamu bisa mendukung pengembangan lebih lanjut:
 
 <p align="center">
   <b>Atau transfer langsung:</b><br/>
-  BCA: <code>0123456789</code> a.n. Jemmy Mongi<br/>
-  Dana/OVO/GoPay: <code>081234567890</code>
+  BCA: <code>2820275287</code> a.n. Jemmy Mongi<br/>
+  Dana/OVO/GoPay: <code>087848513665</code>
 </p>
 
 ---
