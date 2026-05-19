@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    ::selection {
+        @apply bg-violet-200 text-violet-900;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+    }
+    .btn-primary {
+        @apply btn bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:from-violet-700 hover:to-indigo-700 focus:ring-violet-500;
+    }
+    .btn-secondary {
+        @apply btn bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-400;
+    }
+    .btn-danger {
+        @apply btn bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500 shadow-lg shadow-rose-500/20;
+    }
+    .btn-success {
+        @apply btn bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-lg shadow-emerald-500/20;
+    }
+    .form-label {
+        @apply block text-sm font-semibold text-slate-700 mb-1.5;
+    }
+    .form-input {
+        @apply block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-slate-900 shadow-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none disabled:bg-slate-50 disabled:cursor-not-allowed transition-all duration-200 bg-white;
+    }
+    .form-error {
+        @apply text-sm text-rose-600 mt-1 font-medium;
+    }
+    .badge {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    }
+    .glass {
+        @apply bg-white/[0.06] backdrop-blur-xl border border-white/[0.1];
+    }
+    .glass-card {
+        @apply bg-white/80 backdrop-blur-xl border border-white/60 shadow-xl;
+    }
+}
+
+/* Custom scrollbar */
+.scroll-smooth::-webkit-scrollbar { width: 4px; }
+.scroll-smooth::-webkit-scrollbar-track { background: transparent; }
+.scroll-smooth::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+.scroll-smooth::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
