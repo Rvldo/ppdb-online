@@ -274,6 +274,29 @@ Jika project ini bermanfaat, kamu bisa mendukung pengembangan lebih lanjut:
 
 ---
 
+## Butuh Bantuan Setup?
+
+Kalau kamu butuh bantuan instalasi, kustomisasi, atau deploy ke server, hubungi saya langsung:
+
+<table>
+  <tr>
+    <td><b>Nama</b></td>
+    <td>Jemmy Mongi</td>
+  </tr>
+  <tr>
+    <td><b>WhatsApp</b></td>
+    <td><a href="https://wa.me/6287848513665">+62 878-4851-3665</a></td>
+  </tr>
+  <tr>
+    <td><b>Email</b></td>
+    <td><a href="mailto:jemz.mongi27@gmail.com">jemz.mongi27@gmail.com</a></td>
+  </tr>
+</table>
+
+> Saya bisa bantu: instalasi di VPS/hosting, konfigurasi domain, setup Anthropic API, kustomisasi fitur tambahan, dan lain-lain.
+
+---
+
 ## Lisensi
 
 MIT License — bebas digunakan, dimodifikasi, dan didistribusikan.
