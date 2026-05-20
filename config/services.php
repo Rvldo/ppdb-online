@@ -35,4 +35,10 @@ return [
         'api_key' => env('ANTHROPIC_API_KEY'),
     ],
 
+    'ai' => [
+        'provider' => env('AI_PROVIDER', 'deepseek'), // deepseek, groq, openrouter, anthropic
+        'api_key' => env('AI_API_KEY'),
+        'model' => env('AI_MODEL'),
+    ],
+
 ];
