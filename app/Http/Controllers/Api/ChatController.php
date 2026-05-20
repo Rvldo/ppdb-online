@@ -75,6 +75,8 @@ class ChatController extends Controller
     /**
      * Send request sesuai format provider.
      */
+    private string $lastError = '';
+
     private function callAi(string $systemPrompt, array $messages, int $maxTokens = 768): ?string
     {
         $config = $this->getProviderConfig();
@@ -95,6 +97,14 @@ class ChatController extends Controller
                 ->post($config['url'], $body);
 
             if ($response->failed()) {
+                $this->lastError = $response->json('error.message')
+                    ?: $response->json('message')
+                    ?: "HTTP {$response->status()}: {$response->body()}";
+                \Illuminate\Support\Facades\Log::error('AI API failed', [
+                    'provider' => $config['model'],
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
                 return null;
             }
 
@@ -114,6 +124,14 @@ class ChatController extends Controller
             ->post($config['url'], $body);
 
         if ($response->failed()) {
+            $this->lastError = $response->json('error.message')
+                ?: $response->json('message')
+                ?: "HTTP {$response->status()}: {$response->body()}";
+            \Illuminate\Support\Facades\Log::error('AI API failed', [
+                'provider' => 'anthropic',
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
             return null;
         }
 
@@ -213,7 +231,7 @@ PROMPT;
             if (! $reply) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal menghubungi AI assistant.',
+                    'message' => $this->lastError ?: 'Gagal menghubungi AI assistant.',
                 ], 502);
             }
 

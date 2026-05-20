@@ -7,6 +7,7 @@ use App\Models\PengaturanPpdb;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -161,20 +162,57 @@ class TampilanController extends Controller
             return response()->json(['success' => false, 'message' => 'API key belum diisi.']);
         }
 
+        $provider = $pengaturan->ai_provider ?: 'deepseek';
+
         try {
-            $chatController = new \App\Http\Controllers\Api\ChatController();
-            $request = Request::create('/api/v1/chat', 'POST', [
-                'message' => 'Halo, ini test. Jawab singkat: "AI aktif dan siap membantu!"',
+            // Direct API call to test connection
+            $config = match ($provider) {
+                'deepseek' => ['url' => 'https://api.deepseek.com/chat/completions', 'model' => $pengaturan->ai_model ?: 'deepseek-chat'],
+                'groq' => ['url' => 'https://api.groq.com/openai/v1/chat/completions', 'model' => $pengaturan->ai_model ?: 'llama-3.3-70b-versatile'],
+                'openrouter' => ['url' => 'https://openrouter.ai/api/v1/chat/completions', 'model' => $pengaturan->ai_model ?: 'deepseek/deepseek-chat-v3-0324:free'],
+                default => null,
+            };
+
+            if ($provider === 'anthropic') {
+                $response = Http::withHeaders([
+                    'x-api-key' => $apiKey,
+                    'anthropic-version' => '2023-06-01',
+                    'Content-Type' => 'application/json',
+                ])->timeout(15)->post('https://api.anthropic.com/v1/messages', [
+                    'model' => $pengaturan->ai_model ?: 'claude-haiku-4-5-20251001',
+                    'max_tokens' => 64,
+                    'messages' => [['role' => 'user', 'content' => 'Jawab hanya: "AI aktif!"']],
+                ]);
+
+                if ($response->failed()) {
+                    $err = $response->json('error.message') ?: $response->body();
+                    return response()->json(['success' => false, 'message' => "Anthropic error: {$err}"]);
+                }
+
+                $reply = $response->json('content.0.text', '');
+                return response()->json(['success' => true, 'message' => 'AI terhubung!', 'reply' => $reply]);
+            }
+
+            // OpenAI-compatible providers
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$apiKey}",
+                'Content-Type' => 'application/json',
+            ])->timeout(15)->post($config['url'], [
+                'model' => $config['model'],
+                'max_tokens' => 64,
+                'messages' => [
+                    ['role' => 'user', 'content' => 'Jawab hanya: "AI aktif!"'],
+                ],
             ]);
 
-            $response = app()->call([$chatController, 'chat'], ['request' => $request]);
-            $body = json_decode($response->getContent(), true);
+            if ($response->failed()) {
+                $err = $response->json('error.message') ?: $response->json('message') ?: $response->body();
+                return response()->json(['success' => false, 'message' => "{$provider} error: {$err}"]);
+            }
 
-            return response()->json([
-                'success' => $body['success'] ?? false,
-                'message' => $body['success'] ? 'AI terhubung!' : ($body['message'] ?? 'Gagal.'),
-                'reply' => $body['data']['reply'] ?? null,
-            ]);
+            $reply = $response->json('choices.0.message.content', '');
+            return response()->json(['success' => true, 'message' => 'AI terhubung!', 'reply' => $reply]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
