@@ -192,7 +192,8 @@ PROMPT;
             'history.*.content' => ['required_with:history', 'string', 'max:2000'],
         ]);
 
-        $apiKey = config('services.ai.api_key') ?: config('services.anthropic.api_key');
+        $pengaturan = PengaturanPpdb::current();
+        $apiKey = $pengaturan->ai_api_key ?: config('services.ai.api_key') ?: config('services.anthropic.api_key');
         if (! $apiKey) {
             return response()->json([
                 'success' => false,
@@ -239,7 +240,8 @@ PROMPT;
             'context' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $apiKey = config('services.ai.api_key') ?: config('services.anthropic.api_key');
+        $pengaturan = PengaturanPpdb::current();
+        $apiKey = $pengaturan->ai_api_key ?: config('services.ai.api_key') ?: config('services.anthropic.api_key');
         if (! $apiKey) {
             return response()->json(['success' => false, 'message' => 'AI belum dikonfigurasi.'], 503);
         }
