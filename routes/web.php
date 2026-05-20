@@ -62,5 +62,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/tampilan/favicon', [TampilanController::class, 'uploadFavicon'])->name('tampilan.favicon');
         Route::post('/tampilan/hero-bg', [TampilanController::class, 'uploadHeroBg'])->name('tampilan.hero-bg');
         Route::delete('/tampilan/hero-bg', [TampilanController::class, 'deleteHeroBg'])->name('tampilan.hero-bg.delete');
+        Route::put('/tampilan/ai', [TampilanController::class, 'updateAi'])->name('tampilan.ai');
+        Route::post('/tampilan/ai/test', [TampilanController::class, 'testAi'])->name('tampilan.ai.test');
     });
 });

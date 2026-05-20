@@ -17,11 +17,14 @@ class ChatController extends Controller
      */
     private function getProviderConfig(): array
     {
-        $provider = config('services.ai.provider', 'deepseek');
-        $apiKey = config('services.ai.api_key');
-        $model = config('services.ai.model');
+        $pengaturan = PengaturanPpdb::current();
 
-        // Fallback ke Anthropic lama jika ai.api_key kosong tapi ANTHROPIC_API_KEY ada
+        // Prioritas: database > .env
+        $provider = $pengaturan->ai_provider ?: config('services.ai.provider', 'deepseek');
+        $apiKey = $pengaturan->ai_api_key ?: config('services.ai.api_key');
+        $model = $pengaturan->ai_model ?: config('services.ai.model');
+
+        // Fallback ke Anthropic lama
         if (! $apiKey && config('services.anthropic.api_key')) {
             $provider = 'anthropic';
             $apiKey = config('services.anthropic.api_key');

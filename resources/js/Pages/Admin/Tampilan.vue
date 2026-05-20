@@ -8,6 +8,7 @@ const props = defineProps({
     logo_url: String,
     favicon_url: String,
     hero_bg_url: String,
+    ai_config: Object,
 });
 
 // Branding form
@@ -104,6 +105,49 @@ function applyPreset(preset) {
     form.warna_primary = preset.primary;
     form.warna_secondary = preset.secondary;
     form.warna_accent = preset.accent;
+}
+
+// AI Config
+const aiForm = useForm({
+    ai_provider: props.ai_config?.provider || 'deepseek',
+    ai_api_key: props.ai_config?.api_key_masked || '',
+    ai_model: props.ai_config?.model || '',
+});
+
+const aiProviders = [
+    { value: 'deepseek', name: 'DeepSeek', desc: 'Murah & bagus Bahasa Indonesia ($0.14/1M tokens)', url: 'https://platform.deepseek.com', placeholder: 'sk-...' },
+    { value: 'groq', name: 'Groq', desc: 'Gratis & super cepat (Llama 3.3 70B)', url: 'https://console.groq.com', placeholder: 'gsk_...' },
+    { value: 'openrouter', name: 'OpenRouter', desc: 'Banyak model gratis (DeepSeek, Llama, dll)', url: 'https://openrouter.ai', placeholder: 'sk-or-...' },
+    { value: 'anthropic', name: 'Anthropic (Claude)', desc: 'Premium, paling cerdas (berbayar)', url: 'https://console.anthropic.com', placeholder: 'sk-ant-...' },
+];
+
+const selectedProvider = computed(() => aiProviders.find(p => p.value === aiForm.ai_provider));
+const aiKeySet = computed(() => props.ai_config?.api_key_set);
+
+function submitAi() {
+    aiForm.put(route('admin.tampilan.ai'));
+}
+
+const aiTestLoading = ref(false);
+const aiTestResult = ref(null);
+
+async function testAi() {
+    aiTestLoading.value = true;
+    aiTestResult.value = null;
+    try {
+        const res = await fetch(route('admin.tampilan.ai.test'), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+            },
+        });
+        aiTestResult.value = await res.json();
+    } catch {
+        aiTestResult.value = { success: false, message: 'Gagal terhubung ke server.' };
+    }
+    aiTestLoading.value = false;
 }
 </script>
 
@@ -305,6 +349,99 @@ function applyPreset(preset) {
                     <button type="submit" :disabled="form.processing" class="btn-primary px-8">
                         {{ form.processing ? 'Menyimpan...' : 'Simpan Semua Pengaturan' }}
                     </button>
+                </div>
+            </form>
+
+            <!-- ===== AI ASSISTANT ===== -->
+            <form @submit.prevent="submitAi" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3" /></svg>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-lg">AI Assistant</h2>
+                        <p class="text-sm text-slate-500">Konfigurasi provider AI untuk chatbot & form assistant</p>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="mt-5 mb-6 p-4 rounded-xl flex items-center gap-3" :class="aiKeySet ? 'bg-emerald-50 border border-emerald-200/60' : 'bg-amber-50 border border-amber-200/60'">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="aiKeySet ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'">
+                        <svg v-if="aiKeySet" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    </div>
+                    <div class="text-sm" :class="aiKeySet ? 'text-emerald-800' : 'text-amber-800'">
+                        <span v-if="aiKeySet"><strong>AI Aktif</strong> — Provider: {{ selectedProvider?.name }}, Key: {{ ai_config.api_key_masked }}</span>
+                        <span v-else><strong>AI Belum Aktif</strong> — Masukkan API key di bawah untuk mengaktifkan chatbot</span>
+                    </div>
+                </div>
+
+                <!-- Provider Selection -->
+                <div class="mb-5">
+                    <label class="form-label">Provider AI</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                            v-for="p in aiProviders"
+                            :key="p.value"
+                            type="button"
+                            @click="aiForm.ai_provider = p.value"
+                            class="text-left px-4 py-3 rounded-xl border transition-all"
+                            :class="aiForm.ai_provider === p.value ? 'border-violet-400 bg-violet-50 ring-1 ring-violet-400' : 'border-slate-200 hover:border-slate-300'"
+                        >
+                            <div class="font-semibold text-sm text-slate-900">{{ p.name }}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">{{ p.desc }}</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- API Key -->
+                <div class="mb-5">
+                    <label class="form-label">API Key</label>
+                    <input
+                        v-model="aiForm.ai_api_key"
+                        type="text"
+                        class="form-input font-mono text-sm"
+                        :placeholder="selectedProvider?.placeholder || 'Masukkan API key...'"
+                    />
+                    <p class="text-xs text-slate-400 mt-1.5">
+                        Daftar gratis di
+                        <a :href="selectedProvider?.url" target="_blank" class="text-violet-600 underline">{{ selectedProvider?.url }}</a>.
+                        API key disimpan terenkripsi di database, tidak akan ditampilkan utuh.
+                    </p>
+                    <div v-if="aiForm.errors.ai_api_key" class="form-error">{{ aiForm.errors.ai_api_key }}</div>
+                </div>
+
+                <!-- Model Override -->
+                <div class="mb-6">
+                    <label class="form-label">Model (opsional)</label>
+                    <input v-model="aiForm.ai_model" type="text" class="form-input text-sm" placeholder="Kosongkan untuk model default" />
+                    <p class="text-xs text-slate-400 mt-1.5">
+                        Default:
+                        <span v-if="aiForm.ai_provider === 'deepseek'" class="font-mono">deepseek-chat</span>
+                        <span v-else-if="aiForm.ai_provider === 'groq'" class="font-mono">llama-3.3-70b-versatile</span>
+                        <span v-else-if="aiForm.ai_provider === 'openrouter'" class="font-mono">deepseek/deepseek-chat-v3-0324:free</span>
+                        <span v-else class="font-mono">claude-haiku-4-5</span>
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-3">
+                    <button type="submit" :disabled="aiForm.processing" class="btn-primary">
+                        {{ aiForm.processing ? 'Menyimpan...' : 'Simpan AI Config' }}
+                    </button>
+                    <button type="button" @click="testAi" :disabled="aiTestLoading" class="btn-secondary flex items-center gap-2">
+                        <svg v-if="aiTestLoading" class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        {{ aiTestLoading ? 'Testing...' : 'Test Koneksi' }}
+                    </button>
+                </div>
+
+                <!-- Test Result -->
+                <div v-if="aiTestResult" class="mt-4 p-4 rounded-xl text-sm" :class="aiTestResult.success ? 'bg-emerald-50 border border-emerald-200/60 text-emerald-800' : 'bg-rose-50 border border-rose-200/60 text-rose-800'">
+                    <div class="font-semibold">{{ aiTestResult.success ? 'Berhasil!' : 'Gagal' }}</div>
+                    <div class="mt-1">{{ aiTestResult.message }}</div>
+                    <div v-if="aiTestResult.reply" class="mt-2 p-3 bg-white rounded-lg border border-emerald-100 text-slate-700 text-xs">
+                        <span class="text-slate-400">AI Response:</span> {{ aiTestResult.reply }}
+                    </div>
                 </div>
             </form>
         </div>

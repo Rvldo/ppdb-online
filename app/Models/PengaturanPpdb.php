@@ -35,6 +35,13 @@ class PengaturanPpdb extends Model
         'hero_title',
         'hero_subtitle',
         'footer_text',
+        'ai_provider',
+        'ai_api_key',
+        'ai_model',
+    ];
+
+    protected $hidden = [
+        'ai_api_key',
     ];
 
     protected $casts = [

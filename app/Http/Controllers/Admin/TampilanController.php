@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PengaturanPpdb;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,14 @@ class TampilanController extends Controller
             'logo_url' => $pengaturan->logo_path ? Storage::disk('public')->url($pengaturan->logo_path) : null,
             'favicon_url' => $pengaturan->favicon_path ? Storage::disk('public')->url($pengaturan->favicon_path) : null,
             'hero_bg_url' => $pengaturan->hero_bg_path ? Storage::disk('public')->url($pengaturan->hero_bg_path) : null,
+            'ai_config' => [
+                'provider' => $pengaturan->ai_provider ?: 'deepseek',
+                'api_key_set' => ! empty($pengaturan->ai_api_key),
+                'api_key_masked' => $pengaturan->ai_api_key
+                    ? substr($pengaturan->ai_api_key, 0, 8) . '••••••••' . substr($pengaturan->ai_api_key, -4)
+                    : '',
+                'model' => $pengaturan->ai_model ?: '',
+            ],
         ]);
     }
 
@@ -121,5 +130,56 @@ class TampilanController extends Controller
         }
 
         return back()->with('success', 'Background hero berhasil dihapus.');
+    }
+
+    public function updateAi(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ai_provider' => ['required', 'in:deepseek,groq,openrouter,anthropic'],
+            'ai_api_key' => ['nullable', 'string', 'max:500'],
+            'ai_model' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $pengaturan = PengaturanPpdb::current();
+
+        // Jika api_key kosong / hanya mask, jangan overwrite yang lama
+        if (empty($data['ai_api_key']) || str_contains($data['ai_api_key'], '••••')) {
+            unset($data['ai_api_key']);
+        }
+
+        $pengaturan->update($data);
+
+        return back()->with('success', 'Pengaturan AI berhasil disimpan.');
+    }
+
+    public function testAi(): JsonResponse
+    {
+        $pengaturan = PengaturanPpdb::current();
+        $apiKey = $pengaturan->ai_api_key ?: config('services.ai.api_key') ?: config('services.anthropic.api_key');
+
+        if (! $apiKey) {
+            return response()->json(['success' => false, 'message' => 'API key belum diisi.']);
+        }
+
+        try {
+            $chatController = new \App\Http\Controllers\Api\ChatController();
+            $request = Request::create('/api/v1/chat', 'POST', [
+                'message' => 'Halo, ini test. Jawab singkat: "AI aktif dan siap membantu!"',
+            ]);
+
+            $response = app()->call([$chatController, 'chat'], ['request' => $request]);
+            $body = json_decode($response->getContent(), true);
+
+            return response()->json([
+                'success' => $body['success'] ?? false,
+                'message' => $body['success'] ? 'AI terhubung!' : ($body['message'] ?? 'Gagal.'),
+                'reply' => $body['data']['reply'] ?? null,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ]);
+        }
     }
 }
